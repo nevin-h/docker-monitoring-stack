@@ -1,0 +1,70 @@
+version: "3"
+
+volumes:
+  prom-data:
+  graf-data:
+
+## ports are configured based on my own setup.
+## format is {server port}:{container port} where the containter ports should not change
+## but you can map your server port to whatever you like (assuming it's not in use)
+
+## Also, mount points are really up to you and where you want to set them up.
+## Same thing as with the ports - {server filesystem location}:{container file system location}
+## Where you can change your server's directory, but the container should remain the same
+
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - /docker/monitoring/prometheus:/etc/prometheus
+      - prom-data:/prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - graf-data:/var/lib/grafana
+    restart: unless-stopped
+
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - /:/host:ro,rslave
+
+  snmp_exporter:
+    image: prom/snmp-exporter
+    container_name: snmp_exporter
+    ports:
+      - 9116:9116
+    volumes:
+      - /docker/monitoring/snmp_exporter/generator/snmp.yml:/etc/snmp_exporter/snmp.yml
+    restart: unless-stopped
+
+  cadvisor:
+    image: google/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - 4080:8080
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    restart: unless-stopped
+    privileged: true

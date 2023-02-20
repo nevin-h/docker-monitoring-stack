@@ -1,0 +1,13 @@
+modules:
+
+# pfSense
+
+  pfsense:
+    walk:
+      - ifEntry
+      - pfStatus
+      - pfStateTable
+      - pfInterfaces
+    version: 2
+    auth:
+      community: monitoring
